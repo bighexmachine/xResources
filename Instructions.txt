@@ -8,35 +8,42 @@
 
 # 32bitSimulatorForBinaryImage.c #
 C source code of a simulator that loads a.bin in to ram and then executes.
-Compile with gcc hexsimb.c
+Compile with gcc.
 
 # a.bin #
-binary ram image for hexsimb simulator 
+binary ram image for 32bit simulator
 
 # 16bitSimulatorForHexImages.c #
 C source code of a simulator that loads sim2 and sim3 in to the 2 rams and then executes.
-Compile with gcc hexsimb.c
+Compile with gcc.
 
 # sim2 & sim3 #
-Ascii Hex ram images for hexsim16 simulator
+Ascii Hex ram images for 16bit simulator
 
-# xhexb.x #
-X source of the compiler that produces a binary ram image.
+# 16bitSimulatorForHexImages_withDisplay.c #
+C source code of a simulator that loads sim2 and sim3 in to the 2 rams and then executes regularly printing out the contents of the framebuffer to screen.
+Compile with gcc.
 
-# xhex 
+# xCompiler_32bitBinary.x #
+X source of the compiler that produces a binary ram image to run on the 32bit simulator.
+
+# xCompiler_16bitHex.c #
+X source of the compiler that produces 2 hex ram images to run on the 16bit simulator.
+
+# xCompiler_16bitBinary.c #
+X source of the compiler that produces a binary ram images to run on the 16bit binary simulator (simulator not available).
+
+# xCompiler_16bitAssembly.c #
+X source of the compiler that produces a list of assembly instructions (for debug purposes).
 
 # smiley.x #
 Program that displays a smiley face (places the bitmap in to the frame buffer)
 
 # factorial.x #
-Program that calculates factorial and puts answer in a reg.
+Program that calculates factorial and puts answer in areg.
 
 # factorial_display.x #
-Program that calculates factorial and displays answer.
+Program that calculates factorial and prints answer.
 
 # display_test.x #
 Program that draws vertical and horizontal lines on display.
-
-fact16h.ass  hex16.tex     smiley.ass  xhex16a.x  xhexb.x
-bin_simulator.exe  fact16h.x    hexsim16.c  smiley.x    xhex16h.x
-fact16.x           frtest.x     hexsimb.c   xhex16.x    xhexb.bin
