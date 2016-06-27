@@ -1,0 +1,42 @@
+## Instructions ##
+
+ - .x are X source code
+ - .ass are human readble assembly
+ - .h are hex instruction files
+ - .c are source code of simulator
+ - .bin files are binaries to be read by simulator
+
+# 32bitSimulatorForBinaryImage.c #
+C source code of a simulator that loads a.bin in to ram and then executes.
+Compile with gcc hexsimb.c
+
+# a.bin #
+binary ram image for hexsimb simulator 
+
+# 16bitSimulatorForHexImages.c #
+C source code of a simulator that loads sim2 and sim3 in to the 2 rams and then executes.
+Compile with gcc hexsimb.c
+
+# sim2 & sim3 #
+Ascii Hex ram images for hexsim16 simulator
+
+# xhexb.x #
+X source of the compiler that produces a binary ram image.
+
+# xhex 
+
+# smiley.x #
+Program that displays a smiley face (places the bitmap in to the frame buffer)
+
+# factorial.x #
+Program that calculates factorial and puts answer in a reg.
+
+# factorial_display.x #
+Program that calculates factorial and displays answer.
+
+# display_test.x #
+Program that draws vertical and horizontal lines on display.
+
+fact16h.ass  hex16.tex     smiley.ass  xhex16a.x  xhexb.x
+bin_simulator.exe  fact16h.x    hexsim16.c  smiley.x    xhex16h.x
+fact16.x           frtest.x     hexsimb.c   xhex16.x    xhexb.bin
