@@ -204,7 +204,7 @@ void simout(uint16_t word, uint16_t port)
 		if (!connected[fileId])
 		{
 			filename[3] = fileId + '0';
-			simio[fileId] = fopen(filename, "w");
+			simio[fileId] = fopen(filename, "wb");
 			connected[fileId] = true;
 		}
 		fputc(word, simio[fileId]);
@@ -224,7 +224,7 @@ uint16_t simin(uint16_t port)
 		if (!connected[fileId])
 		{
 			filename[3] = fileId + '0';
-			simio[fileId] = fopen(filename, "r");
+			simio[fileId] = fopen(filename, "rb");
 			connected[fileId] = true;
 		}
 		return fgetc(simio[fileId]);
