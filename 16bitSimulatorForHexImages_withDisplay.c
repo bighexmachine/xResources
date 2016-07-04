@@ -38,7 +38,7 @@ uint16_t mem[32768];
 uint8_t* pmem = (uint8_t*)mem;
 
 //(16 * 16) + 16 + 1
-char framebuffer[273];
+char framebuffer[631];
 int base = 0x7FF0;
 
 uint16_t pc;
@@ -119,20 +119,22 @@ int main()
 void printFrameBuffer()
 {
 	int x, y, z, w;
-	w = 15;
+	w = 16;
 	for (y = 0; y < 16; y++)
 	{
 		uint32_t bitPattern = mem[base + y];
 		z = 15;
-		for (x = 0; x < 16; x++)
+		for (x = 0; x < 32; x+=2)
 		{
 			if ((bitPattern & (1 << z)) == 0)
 			{
-				framebuffer[17 * w + x] = ' ';
+				framebuffer[35 * w + x +1] = ' ';
+				framebuffer[35 * w + x +2] = ' ';
 			}
 			else
 			{
-				framebuffer[17 * w + x] = 223;
+				framebuffer[35 * w + x +1] = 219;
+				framebuffer[35 * w + x +2] = 219;
 			}
 			z--;
 		}
@@ -180,15 +182,43 @@ int32_t hexVal(char ch)
 
 void initialiseFrameBuffer()
 {
-	framebuffer[272] = '\0';
+	char vert = 186;
+	char hor = 205;
+	char tl = 201;
+	char tr = 187;
+	char bl = 200;
+	char br = 188;
+
+	framebuffer[630] = '\0';
 	int x;
 
-	for (x = 0; x < 272; x++)
+	for (x = 0; x < 630; x++)
 		framebuffer[x] = '0';
+	
+	for (x = 35; x < 630-35; x += 35)
+	{
+		framebuffer[x] = vert;
+		framebuffer[x + 33] = vert;
+		framebuffer[x + 34] = '\n';
+	}
+	
+	framebuffer[0] = tl;
+	for (x = 1; x < 33; x++)
+	{
+		framebuffer[x] = hor;
+	}
+	framebuffer[x] = tr;
+	framebuffer[x+1] = '\n';
 
-	for (x = 16; x < 273; x+=17 )
-		framebuffer[x] = '\n';
-
+	framebuffer[630-35] = bl;
+	for (x = 630 - 35 + 1; x < 630-2; x++)
+	{
+		framebuffer[x] = hor;
+	}
+	framebuffer[x] = br;
+	framebuffer[x+1] = '\n';
+	
+	printFrameBuffer();
 }
 
 void simout(uint16_t word, uint16_t port)

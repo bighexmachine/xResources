@@ -173,10 +173,11 @@ var constp;
 ||
 array tables[1000];
 var tablep;
+var tablesize;
 ||
 array strings[1000];
 var stringp;
-var stringaddr;
+var stringsize;
 ||
 val labval_size  = 2000;
 array labval[labval_size];
@@ -2773,7 +2774,7 @@ proc genstring(val x) is
   var i;
   var sa;
   var sl;
-{ sa := stringaddr; 
+{ sa := stringsize; 
   sl := rem(tree[x + 1], 256);
   i := 0;
   while i <= div(sl, 4) do
@@ -2781,7 +2782,7 @@ proc genstring(val x) is
     stringp := stringp + 1;
     i := i + 1
   };
-  stringaddr := stringaddr + div(sl + 2, 2); 
+  stringsize := stringsize + div(sl + 2, 2); 
   gen(cbf_string, 0, sa)
 }
 
@@ -2789,9 +2790,9 @@ proc gentable(val x) is
   var tp;
 { tp := tablep;
   tablep := tablep + 1; 
+  gen(cbf_table, 0, tablesize);
   gentabvals(x);
-  tables[tp] := tablep;
-  gen(cbf_table, 0, tp+1)
+  tables[tp] := tablep
 }
 
 proc gentabvals(val x) is
@@ -2804,6 +2805,7 @@ proc gentabvals(val x) is
   if isval(x)
   then
   { tables[tablep] := getval(x);
+    tablesize := tablesize + 1;
     tablep := tablep + 1
   }
   else
@@ -2860,8 +2862,9 @@ proc initbuffer() is
 { cb_loadpoint := 0;
   constp := 0;
   tablep := 0;
+  tablesize := 0;
   stringp := 0;
-  stringaddr := 0;
+  stringsize := 0;
   cb_bufferp := 0
 }
 
@@ -2944,8 +2947,8 @@ proc expand() is
     then
     { cb_conststart := div(cb_loadpoint, 2);
       cb_tablestart := cb_conststart + constp;
-      cb_stringstart := cb_tablestart + tablep;
-      cb_loadpoint := cb_loadpoint + mul2(constp, 2) + mul2(tablep, 2) + mul2(stringaddr, 2)
+      cb_stringstart := cb_tablestart + tablesize;
+      cb_loadpoint := cb_loadpoint + mul2(constp, 2) + mul2(tablesize, 2) + mul2(stringsize, 2)
     }
     else
     if flag = cbf_entry 
@@ -2990,9 +2993,15 @@ proc expand() is
         cb_loadpoint := cb_loadpoint + 1
     }
     else
-    if (flag = cbf_const) or (flag = cbf_table)
+    if (flag = cbf_const) 
     then
     { offset := cbv_low + cb_conststart;
+      cb_loadpoint := cb_loadpoint + instlength(offset) 
+    }
+    else
+    if (flag = cbf_table)
+    then
+    { offset := cbv_low + cb_tablestart;
       cb_loadpoint := cb_loadpoint + instlength(offset) 
     }
     else
@@ -3041,8 +3050,8 @@ proc flushbuffer() is
     then
     { cb_conststart := div(cb_loadpoint, 2);
       cb_tablestart := cb_conststart + constp;
-      cb_stringstart := cb_tablestart + tablep;
-      cb_loadpoint := cb_loadpoint + mul2(constp, 2) + mul2(tablep, 2) + mul2(stringaddr, 2);
+      cb_stringstart := cb_tablestart + tablesize;
+      cb_loadpoint := cb_loadpoint + mul2(constp, 2) + mul2(tablesize, 2) + mul2(stringsize, 2);
       outconsts();
       outtables(); 
       outstrings()
@@ -3124,12 +3133,8 @@ proc flushbuffer() is
     else
     if flag = cbf_table
     then
-    { offset := cbv_low + cb_tablestart;
-      if cbv_high = r_areg
-      then
-        outinst(i_ldac, offset)
-      else
-        outinst(i_ldbc, offset);
+    { offset := cbv_low + cb_tablestart; 
+      outinst(i_ldac, offset);
       cb_loadpoint := cb_loadpoint + instlength(offset)
     }
     else
@@ -3201,7 +3206,7 @@ proc outtables() is
   { top := tables[count];
     count := count + 1;
     while count < top do
-    { out2(tables[tablep]);
+    { out2(tables[count]);
       count := count + 1
     }
   }
