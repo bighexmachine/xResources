@@ -63,7 +63,7 @@ int main()
 	printf("\n");
 	loadRamImages();
 	oreg = 0;
-	int counter = 0;
+
 	while (true)
 	{
 		inst = pmem[pc];
@@ -103,9 +103,7 @@ int main()
 		case i_pfix: oreg = oreg << 4; break;
 		case i_nfix: oreg = 0xFFFFFF00 | (oreg << 4); break;
 		};
-		counter++;
-		if(counter%100==0)
-			printFrameBuffer();
+		printFrameBuffer();
 	}
 	printFrameBuffer();
 }
@@ -113,23 +111,16 @@ int main()
 void printFrameBuffer()
 {
 	int x, y, z, w;
-	char vert = 186;
-	char hor = 205;
-	char tl = 201;
-	char tr = 187;
-	char bl = 200;
-	char br = 188;
-
-	printf("%c", tl);
+	printf("╔");
 	for (x = 0; x < 32; x++)
-		printf("%c", hor);
-	printf("%c", 187);
+		printf("═");
+	printf("╗");
 	printf("\n");
 
 	w = 15;
 	for (y = 0; y < 16; y++)
 	{
-		printf("%c", vert);
+		printf("║");
 		uint32_t bitPattern = mem[base + w];
 		z = 15;
 		for (x = 0; x < 32; x += 2)
@@ -141,20 +132,21 @@ void printFrameBuffer()
 			}
 			else
 			{
-				printf("%c", 219);
-				printf("%c", 219);
+				printf("█");
+				printf("█");
 			}
 			z--;
 		}
 		w--;
-		printf("%c", vert);
+
+		printf("║");
 		printf("\n");
 	}
 
-	printf("%c", bl);
+	printf("╚");
 	for (x = 0; x < 32; x++)
-		printf("%c", hor);
-	printf("%c", br);
+		printf("═");
+	printf("╝");
 	printf("\n");
 	printf("\033[18A");
 }
@@ -235,4 +227,3 @@ uint16_t simin(uint16_t port)
 		return fgetc(simio[fileId]);
 	}
 }
-
