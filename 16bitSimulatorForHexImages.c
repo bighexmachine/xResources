@@ -92,14 +92,14 @@ int main()
 			{
 			case o_add: areg = areg + breg; oreg = 0; break;
 			case o_sub: areg = areg - breg; oreg = 0; break;
-			case o_in: areg = simin(breg); oreg = 0; break;
+			case o_in: areg = simin(areg); oreg = 0; break;
 			case o_out: simout(areg, breg); oreg = 0; break;
 			};
 			break;
 
 		case i_pfix: oreg = oreg << 4; break;
 		case i_nfix: oreg = 0xFFFFFF00 | (oreg << 4); break;
-		};	
+		};
 	}
 }
 

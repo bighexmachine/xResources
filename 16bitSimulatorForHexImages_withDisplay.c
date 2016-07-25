@@ -100,14 +100,14 @@ int main()
 			{
 			case o_add: areg = areg + breg; oreg = 0; break;
 			case o_sub: areg = areg - breg; oreg = 0; break;
-			case o_in: areg = simin(breg); oreg = 0; break;
+			case o_in: areg = simin(areg); oreg = 0; break;
 			case o_out: simout(areg, breg); oreg = 0; break;
 			};
 			break;
 
 		case i_pfix: oreg = oreg << 4; break;
 		case i_nfix: oreg = 0xFFFFFF00 | (oreg << 4); break;
-		};		
+		};
 
 		counter++;
 		if (counter % 100000000 == 0)
@@ -194,14 +194,14 @@ void initialiseFrameBuffer()
 
 	for (x = 0; x < 630; x++)
 		framebuffer[x] = '0';
-	
+
 	for (x = 35; x < 630-35; x += 35)
 	{
 		framebuffer[x] = vert;
 		framebuffer[x + 33] = vert;
 		framebuffer[x + 34] = '\n';
 	}
-	
+
 	framebuffer[0] = tl;
 	for (x = 1; x < 33; x++)
 	{
@@ -217,7 +217,7 @@ void initialiseFrameBuffer()
 	}
 	framebuffer[x] = br;
 	framebuffer[x+1] = '\n';
-	
+
 	printFrameBuffer();
 }
 
