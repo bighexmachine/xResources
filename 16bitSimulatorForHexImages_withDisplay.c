@@ -37,8 +37,6 @@ char connected[] = { false, false, false, false, false, false, false, false };
 uint16_t mem[32768];
 uint8_t* pmem = (uint8_t*)mem;
 
-//(16 * 16) + 16 + 1
-char framebuffer[631];
 int base = 0x7FF0;
 
 uint16_t pc;
@@ -58,17 +56,14 @@ int hexVal(char ch);
 void simout(uint16_t word, uint16_t port);
 uint16_t simin(uint16_t port);
 int32_t isHexCharacter(char ch);
-void initialiseFrameBuffer();
 void printFrameBuffer();
 
 int main()
 {
 	printf("\n");
 	loadRamImages();
-	initialiseFrameBuffer();
 	oreg = 0;
 	int counter = 0;
-
 	while (true)
 	{
 		inst = pmem[pc];
@@ -108,9 +103,8 @@ int main()
 		case i_pfix: oreg = oreg << 4; break;
 		case i_nfix: oreg = 0xFFFFFF00 | (oreg << 4); break;
 		};
-
 		counter++;
-		if (counter % 100000000 == 0)
+		if(counter%100==0)
 			printFrameBuffer();
 	}
 	printFrameBuffer();
@@ -119,28 +113,50 @@ int main()
 void printFrameBuffer()
 {
 	int x, y, z, w;
-	w = 16;
+	char vert = 186;
+	char hor = 205;
+	char tl = 201;
+	char tr = 187;
+	char bl = 200;
+	char br = 188;
+
+	printf("%c", tl);
+	for (x = 0; x < 32; x++)
+		printf("%c", hor);
+	printf("%c", 187);
+	printf("\n");
+
+	w = 15;
 	for (y = 0; y < 16; y++)
 	{
-		uint32_t bitPattern = mem[base + y];
+		printf("%c", vert);
+		uint32_t bitPattern = mem[base + w];
 		z = 15;
-		for (x = 0; x < 32; x+=2)
+		for (x = 0; x < 32; x += 2)
 		{
 			if ((bitPattern & (1 << z)) == 0)
 			{
-				framebuffer[35 * w + x +1] = ' ';
-				framebuffer[35 * w + x +2] = ' ';
+				printf(" ");
+				printf(" ");
 			}
 			else
 			{
-				framebuffer[35 * w + x +1] = 219;
-				framebuffer[35 * w + x +2] = 219;
+				printf("%c", 219);
+				printf("%c", 219);
 			}
 			z--;
 		}
 		w--;
+		printf("%c", vert);
+		printf("\n");
 	}
-	printf("\n%s", framebuffer);
+
+	printf("%c", bl);
+	for (x = 0; x < 32; x++)
+		printf("%c", hor);
+	printf("%c", br);
+	printf("\n");
+	printf("\033[18A");
 }
 
 void loadRamImages()
@@ -178,47 +194,6 @@ int32_t hexVal(char ch)
 	if (('0' <= ch) && (ch <= '9')) v = ch - '0';
 	else v = (ch - 'A') + 10;
 	return v;
-}
-
-void initialiseFrameBuffer()
-{
-	char vert = 186;
-	char hor = 205;
-	char tl = 201;
-	char tr = 187;
-	char bl = 200;
-	char br = 188;
-
-	framebuffer[630] = '\0';
-	int x;
-
-	for (x = 0; x < 630; x++)
-		framebuffer[x] = '0';
-
-	for (x = 35; x < 630-35; x += 35)
-	{
-		framebuffer[x] = vert;
-		framebuffer[x + 33] = vert;
-		framebuffer[x + 34] = '\n';
-	}
-
-	framebuffer[0] = tl;
-	for (x = 1; x < 33; x++)
-	{
-		framebuffer[x] = hor;
-	}
-	framebuffer[x] = tr;
-	framebuffer[x+1] = '\n';
-
-	framebuffer[630-35] = bl;
-	for (x = 630 - 35 + 1; x < 630-2; x++)
-	{
-		framebuffer[x] = hor;
-	}
-	framebuffer[x] = br;
-	framebuffer[x+1] = '\n';
-
-	printFrameBuffer();
 }
 
 void simout(uint16_t word, uint16_t port)
@@ -260,3 +235,4 @@ uint16_t simin(uint16_t port)
 		return fgetc(simio[fileId]);
 	}
 }
+
