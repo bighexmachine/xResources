@@ -2959,11 +2959,11 @@ proc expand() is
     else
     if flag = cbf_pexit
     then
-      cb_loadpoint := cb_loadpoint + instlength(stksize) + 5
+      cb_loadpoint := cb_loadpoint + mul2(instlength(stksize), 2) + 4
     else
     if flag = cbf_fnexit
     then
-      cb_loadpoint := cb_loadpoint + instlength(stksize) + instlength(stksize + 1) + 5
+      cb_loadpoint := cb_loadpoint + mul2(instlength(stksize), 2) + instlength(stksize + 1) + 4
     else
     if flag = cbf_inst
     then
@@ -3076,7 +3076,7 @@ proc flushbuffer() is
       outinst(i_stam, m_sp);
       outinst(i_ldbi, stksize);
       outinst(i_brb, 0); 
-      cb_loadpoint := cb_loadpoint + instlength(stksize) + 5  
+      cb_loadpoint := cb_loadpoint + mul2(instlength(stksize), 2) + 4  
     }
     else
     if flag = cbf_fnexit 
@@ -3088,7 +3088,7 @@ proc flushbuffer() is
       outinst(i_stam, m_sp);
       outinst(i_ldbi, stksize);
       outinst(i_brb, 0); 
-      cb_loadpoint := cb_loadpoint + instlength(stksize) + instlength(stksize + 1) + 5  
+      cb_loadpoint := cb_loadpoint + mul2(instlength(stksize), 2) + instlength(stksize + 1) + 4  
     }
     else
     if flag = cbf_inst
