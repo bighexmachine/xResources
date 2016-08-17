@@ -38,6 +38,7 @@ uint16_t mem[32768];
 uint8_t* pmem = (uint8_t*)mem;
 
 int base = 0x7FF0;
+uint32_t outputs[2];
 
 uint16_t pc;
 uint16_t sp;
@@ -56,7 +57,7 @@ int hexVal(char ch);
 void simout(uint16_t word, uint16_t port);
 uint16_t simin(uint16_t port);
 int32_t isHexCharacter(char ch);
-void printFrameBuffer();
+void printStatus();
 
 int main()
 {
@@ -103,12 +104,12 @@ int main()
 		case i_pfix: oreg = oreg << 4; break;
 		case i_nfix: oreg = 0xFFFFFF00 | (oreg << 4); break;
 		};
-		printFrameBuffer();
+		printStatus();
 	}
-	printFrameBuffer();
+	printStatus();
 }
 
-void printFrameBuffer()
+void printStatus()
 {
 	int x, y, z, w;
 	printf("╔");
@@ -147,8 +148,27 @@ void printFrameBuffer()
 	for (x = 0; x < 32; x++)
 		printf("═");
 	printf("╝");
+
 	printf("\n");
-	printf("\033[18A");
+
+	for (y=0;y<2;y++)
+	{
+		for (x=7;x>=0;x--)
+		{
+			if((outputs[y] & (1 << x)) == 0)
+			{
+
+				printf(" ");
+			}
+			else
+			{
+				printf("█");
+			}
+		}
+		printf("|");
+	}
+	printf("\n");
+	printf("\033[19A");
 }
 
 void loadRamImages()
@@ -190,7 +210,11 @@ int32_t hexVal(char ch)
 
 void simout(uint16_t word, uint16_t port)
 {
-	if (port < 256)
+	if (port<2)
+	{
+		outputs[port] = word;
+	}
+	else if (port < 256)
 	{
 		putchar(word);
 	}
@@ -208,11 +232,29 @@ void simout(uint16_t word, uint16_t port)
 	}
 }
 
+#include <sys/select.h>
+#define STDIN_FILENO 0
+
+int kbhit()
+{
+    struct timeval tv;
+    fd_set fds;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds); //STDIN_FILENO is 0
+    select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+    return FD_ISSET(STDIN_FILENO, &fds);
+}
+
 uint16_t simin(uint16_t port)
 {
 	if (port < 256)
 	{
-		return getchar();
+		int i = kbhit();
+  		if (i == 1)
+			return getchar()-'0';
+		return 0;
 	}
 	else
 	{
