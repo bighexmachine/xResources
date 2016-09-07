@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "string.h"
+#include <libgen.h>
 
 #define true     -1
 #define false    0
@@ -58,6 +59,7 @@ uint32_t oreg;
 
 char* argumentString;
 int argumentStringPos;
+char dirPath[100];
 
 /*
 * Instructions are 8 bits, upper nibble is opcode and lower nibble is operand
@@ -69,6 +71,9 @@ int32_t running;
 int main(int argc, char *argv[])
 {
      argumentString = (char*) argv[1];
+
+     strcpy(dirPath, dirname((char*) argv[0]) );
+     strcat(dirPath, "/");
 
      argumentStringPos = 0;
 	printf("\n");
@@ -130,7 +135,10 @@ int main(int argc, char *argv[])
 
 void loadRamImage()
 {
-	FILE* ramImg = fopen("a.bin", "rb");
+     char filePath[105];
+     strcpy(filePath, dirPath);
+     strcat(filePath, "a.bin");
+	FILE* ramImg = fopen(filePath, "rb");
 	//first word states number of subsequent words
 	uint32_t numWords = fgetc(ramImg) | (fgetc(ramImg)<<8) | (fgetc(ramImg)<<16) | (fgetc(ramImg)<<24);
 	uint32_t lengthInBytes = numWords << 2;
@@ -161,6 +169,9 @@ void svc()
 uint32_t fileOpen(uint32_t* strptr, uint32_t toWrite)
 {
      const char* filename = (char *) strptr;
+     char filePath[150];
+     strcpy(filePath, dirPath);
+     strcat(filePath, filename);
      int i;
      FILE* tmp;
      for (i=4; i<8; i++)
@@ -168,9 +179,9 @@ uint32_t fileOpen(uint32_t* strptr, uint32_t toWrite)
           if (!connected[i])
           {    
                if (toWrite) {
-                    tmp = fopen(filename, "wb");
+                    tmp = fopen(filePath, "wb");
                } else {
-                    tmp = fopen(filename, "rb");
+                    tmp = fopen(filePath, "rb");
                }
                if (tmp == NULL)
                     return 0xffffffff;
