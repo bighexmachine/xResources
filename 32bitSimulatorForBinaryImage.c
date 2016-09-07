@@ -1,6 +1,7 @@
 
 #include "stdio.h"
 #include "stdint.h"
+#include "string.h"
 
 #define true     -1
 #define false    0
@@ -39,6 +40,7 @@ uint32_t readBinaryHalfword(FILE* ramImageFile);
 void svc();
 void simout(uint32_t word, uint32_t port);
 uint32_t simin(uint32_t port);
+uint32_t fileOpen(uint32_t* strptr, uint32_t toWrite);
 
 /*
 * Memory is made from 32 bits words but instructions are still 8 bits
@@ -54,6 +56,9 @@ uint32_t areg;
 uint32_t breg;
 uint32_t oreg;
 
+char* argumentString;
+int argumentStringPos;
+
 /*
 * Instructions are 8 bits, upper nibble is opcode and lower nibble is operand
 */
@@ -61,9 +66,11 @@ uint8_t inst;
 
 int32_t running;
 
-int main()
+int main(int argc, char *argv[])
 {
+     argumentString = (char*) argv[1];
 
+     argumentStringPos = 0;
 	printf("\n");
 
 	loadRamImage();
@@ -123,25 +130,21 @@ int main()
 
 void loadRamImage()
 {
-	FILE* ramImageFile = fopen("a.bin", "rb");
+	FILE* ramImg = fopen("a.bin", "rb");
 	//first word states number of subsequent words
-	uint32_t lowerHalf = readBinaryHalfword(ramImageFile);
-	uint32_t higherHalf = readBinaryHalfword(ramImageFile);
-	uint32_t numberOfWords = (higherHalf << 16) | lowerHalf;
-	uint32_t lengthInBytes = numberOfWords << 2;
+	uint32_t numWords = fgetc(ramImg) | (fgetc(ramImg)<<8) | (fgetc(ramImg)<<16) | (fgetc(ramImg)<<24);
+	uint32_t lengthInBytes = numWords << 2;
+
 	pc = 0;
 	uint32_t n;
 	for (n = 0; n < lengthInBytes; n++)
-		pmem[n] = (uint8_t)fgetc(ramImageFile);
-	printf("Ram Image loaded into simulator. Num bytes: %d\n", lengthInBytes);
+     {
+		pmem[n] = (uint8_t) fgetc(ramImg);
+     }	
+     printf("Ram Image loaded into simulator. Num bytes: %d\n", lengthInBytes);
 }
 
-uint32_t readBinaryHalfword(FILE* ramImageFile)
-{
-	uint32_t lowbits = fgetc(ramImageFile);
-	uint32_t highbits = fgetc(ramImageFile);
-	return (highbits << 8) | lowbits;
-}
+
 
 void svc()
 {
@@ -151,7 +154,31 @@ void svc()
 	case 0: running = false; break;
 	case 1: simout(mem[sp + 2], mem[sp + 3]); break;
 	case 2: mem[sp + 1] = simin(mem[sp + 2]) & 0xFF; break;
+	case 3: mem[sp + 1] = fileOpen(mem + mem[sp+2], mem[sp + 3 ]);break;
 	}
+}
+
+uint32_t fileOpen(uint32_t* strptr, uint32_t toWrite)
+{
+     const char* filename = (char *) strptr;
+     int i;
+     FILE* tmp;
+     for (i=4; i<8; i++)
+     {
+          if (!connected[i])
+          {    
+               if (toWrite) {
+                    tmp = fopen(filename, "wb");
+               } else {
+                    tmp = fopen(filename, "rb");
+               }
+               if (tmp == NULL)
+                    return 0xffffffff;
+               simio[i] = tmp;
+			connected[i] = true;
+               return i<<8;
+          }
+     }
 }
 
 void simout(uint32_t word, uint32_t port)
@@ -176,7 +203,13 @@ void simout(uint32_t word, uint32_t port)
 
 uint32_t simin(uint32_t port)
 {
-	if (port < 256)
+     //args
+     if (port == 1)
+     {
+          if (argumentStringPos >= strlen(argumentString)) { return 255 /*EOF*/; }
+          return argumentString[argumentStringPos++];
+     }
+	else if (port < 256)
 	{
 		return getchar();
 	}

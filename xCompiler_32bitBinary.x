@@ -1,8 +1,11 @@
 
 val put            = 1;
 val get            = 2;
+val openFile       = 3;
+val readOnly       = 0;
+val writeOnly      = 1;
 ||
-val instream       = 0;
+var instream;
 val messagestream  = 0;
 val binstream      = 512;
 ||
@@ -43,6 +46,7 @@ val s_proc        = 24;
 val s_func        = 25;
 val s_is          = 26;
 val s_stop        = 27;
+val s_include     = 28;
 ||
 val s_not         = 32;
 val s_neg         = 34;
@@ -218,9 +222,17 @@ var div_x;
 ||
 val maxaddr      = 200000;
 
+val filenameMaxLengthInWords = 10;
+array filename[filenameMaxLengthInWords];
+
+var includeFlag;
+array includeCStr[filenameMaxLengthInWords];
+
 proc main() is
   var t;
-{ 
+{
+  setInputFileFromArgs();
+    
   selectoutput(messagestream);  
 
   t := formtree();
@@ -235,12 +247,56 @@ proc main() is
 
 }
 
+proc setInputFileFromArgs() is 
+  var ch;
+  var charCount;
+  var wordCount;
+  var bitInWordCount;
+  var maxChars;
+{ 
+
+  |read filename from args|
+  instream := 1;
+  ch := getchar();
+  charCount := 0;
+  |weird initial values to make it simpler|
+  wordCount := -1;
+  bitInWordCount := 32;
+  maxChars := mul(filenameMaxLengthInWords,bytesperword);
+  while (ch ~= EOF) and (charCount<maxChars) do 
+  {
+    if bitInWordCount = 32 then
+    {
+      wordCount := wordCount+1;
+      filename[wordCount] := 0;
+      bitInWordCount := 0
+    }
+    else skip;
+    filename[wordCount] := filename[wordCount] + lsh(ch, bitInWordCount);
+    charCount := charCount+1;
+    bitInWordCount := bitInWordCount+8;
+    ch := getchar()
+  };
+  
+  instream := openFile(filename, readOnly)
+  
+}
+
 proc selectoutput(val c) is outstream := c
 
 proc putval(val c) is put(c, outstream)
 
 proc newline() is putval('\n')
 
+func lsh(val x, val n) is 
+ var i;
+ var y;
+  {
+    y:=x;
+    i:=0;
+    while i<n do {y:=y+y;i:=i+1};
+    return y
+  }
 
 func lsu(val x, val y) is
   if (x < 0) = (y < 0)
@@ -439,12 +495,7 @@ proc printhex(val n) is
 
 func formtree() is
   var i;
-  var t;
-  
-{ linep := 0;
-  wordp := 0;
-  charp := 0;
-
+{ 
   treep := 1;
 
   i := 0;
@@ -458,23 +509,113 @@ func formtree() is
   nullnode := cons1(s_null);
 
   zeronode := cons2(s_number, 0);
+  
+  return formtree_r()
+}  
 
+func formtree_r() is
+  var t;
+  var p;
+  var currentFile;
+  var inc;
+  var inc_gv;
+  var inc_proc;
+  var linep_backup;
+  var linecount_backup;
+{
   linecount := 0;
   
+  linep := 0;
   rdline();
   rch();
-   
-  nextsymbol();
- 
-  if (symbol = s_var) or (symbol = s_val) or (symbol = s_array)
-  then 
-    t := rgdecls()
-  else
-    t := nullnode;
   
-  return cons3(s_body, t, rprocdecls())
-}  
+  nextsymbol();
+  
+  inc_gv := nullnode;
+  inc_proc := nullnode;
+  while symbol = s_include do
+  { 
+    nextsymbol(); 
+    storeIncludeFileName();
+    currentFile := instream;
+    instream := openFile(includeCStr, 0);
+    if instream = #FFFFFFFF then {cmperror("can't open included file: ");cmperror(wordv)}
+    else
+    { 
+      linep_backup := linep;
+      linecount_backup := linecount;
+      inc := formtree_r();
+      |note to self: 'require "filename.x"' must be at end of line|
+      linep := linep_backup;
+      linecount := linecount_backup;
+      
+      if inc_gv = nullnode
+      then inc_gv := tree[inc + t_op1] 
+      else inc_gv := cons3(s_semicolon, inc_gv, tree[inc + t_op1]);
+      
+      if inc_proc = nullnode
+      then inc_proc := tree[inc + t_op2] 
+      else inc_proc := cons3(s_semicolon, inc_proc, tree[inc + t_op2])
+
+    };
+    instream := currentFile;
+    rch();
+    nextsymbol()
+  };
+
+  if (symbol = s_var) or (symbol = s_val) or (symbol = s_array)
+  then
+  {
+    if inc_gv = nullnode
+    then t := rgdecls()
+    else t := cons3(s_semicolon, rgdecls(), inc_gv)
+  }
+  else
+  {
+    if inc_gv = nullnode
+    then t := nullnode
+    else t := inc_gv
+  };
+  
+  if inc_proc = nullnode 
+  then p := rprocdecls()
+  else p := cons3(s_semicolon ,rprocdecls(), inc_proc);
+  
+  return cons3(s_body, t, p)
+
+}
+
+proc storeIncludeFileName() is 
+  var char;
+  var charCount;
+  var wordCount;
+  var bitInWordCount;
+  var maxChars;
+{ 
+
+  charCount := 1;
+  char := charv[charCount];
+  |weird initial values to make it simpler|
+  wordCount := -1;
+  bitInWordCount := 32;
+  maxChars := mul(filenameMaxLengthInWords,bytesperword);
+  while (char ~= EOF) and (charCount<(charv[0]+1)) do 
+  {
+    if bitInWordCount = 32 then
+    {
+      wordCount := wordCount+1;
+      includeCStr[wordCount] := 0;
+      bitInWordCount := 0
+    }
+    else skip;
+    includeCStr[wordCount] := includeCStr[wordCount] + lsh(char, bitInWordCount);
+    charCount := charCount+1;
+    bitInWordCount := bitInWordCount+8;
+    char := charv[charCount]
+  }
+} 
  
+
 proc cmperror(array s) is 
 { prints("error near line ");
   printn(linecount); prints(": ");
@@ -604,7 +745,8 @@ proc declsyswords() is
   declare("true", s_true);
   declare("val", s_val);
   declare("var", s_var);
-  declare("while", s_while)
+  declare("while", s_while);
+  declare("include", s_include)
  }  
 
 func getchar() is 
@@ -1426,7 +1568,7 @@ func findname(val x) is
     skip
   else
   { namemessage("name not declared ", x);
-    namemessage("in function", tree[procdef + t_op1])
+    namemessage("in function ", tree[procdef + t_op1])
   };
   return n
 }
