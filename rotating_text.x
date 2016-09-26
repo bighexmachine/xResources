@@ -213,3 +213,11 @@ proc copyImage(array s, array dest) is
     }
   }
 
+proc delay() is
+  var n;
+  {
+    n := 0;
+    while n < 10 do n := n + 1
+  }
+
+
